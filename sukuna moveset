@@ -1,0 +1,614 @@
+local ts = game:GetService("TweenService")
+local cs = game:GetService("CollectionService")
+local run = game:GetService("RunService")
+local hb = require(game.ServerScriptService.Modules.Hitbox)
+local hb2 = require(game.ServerScriptService.Modules.HitboxI)
+local ch = require(game.ServerScriptService.Modules.CombatHandler)
+local rock = require(game.ServerScriptService.Modules.RocksModule)
+local enev = game:GetService("ReplicatedStorage").Remotes.Enable
+local camrem = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CamManipulation")
+local camshakerem = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("CamShake")
+
+--i added main values to the module above
+
+local Movesets = {
+
+	["KingOfCurses"] = { --name of the mvoeset
+		
+		["AbilityAdd"] = function(Player) --first move ( wwhen player spawns)
+			game.Debris:AddItem(Player.Character:WaitForChild("Animate"),0)
+			game.Debris:AddItem(Player.Character:WaitForChild("Health"),0)
+
+			local ability = game:GetService("ServerStorage"):WaitForChild("Abilities"):WaitForChild("KingOfCurses"):Clone() --get the ability from the folder and the code below adds custom hp script and custom anims ( idle and walk)
+			ability.Parent = Player.Character
+			ability.Health.Parent = Player.Character
+			ability.Animate.Parent = Player.Character	
+			
+			
+			game:GetService("ServerStorage"):WaitForChild("Models"):WaitForChild("KingOfCurses"):WaitForChild("Face"):Clone().Parent = Player.Character -- sukuna face acceso
+			
+			local rarmtrail = game:GetService("ServerStorage"):WaitForChild("VFX"):WaitForChild("KingOfCurses"):WaitForChild("Rarm")
+			for i,v in pairs(rarmtrail:GetChildren()) do
+				local vv = v:Clone()
+				vv.Parent = Player.Character["Right Arm"]
+			end
+			Player.Character:AddTag("Combo1")
+			Player.Character.Humanoid.WalkSpeed = 32
+			
+
+
+			
+		--	Player.Character:AddTag("Dodge")
+		end,
+		
+		["W"] = function(Player)
+			Player.Character:AddTag("W") -- adding w tag to chr for dashing ( i know there is a more basic way but this script is a bit ( 5 months ) old and i aint gonna edit this thing
+		end, 
+		["WW"] = function(Player)
+			Player.Character:RemoveTag("W")
+		end,
+
+		["A"] = function(Player)
+			Player.Character:AddTag("A")
+		end, 
+		["AA"] = function(Player)
+			Player.Character:RemoveTag("A")
+		end,
+
+		["S"] = function(Player)
+			Player.Character:AddTag("S")
+		end, 
+		["SS"] = function(Player)
+			Player.Character:RemoveTag("S")
+		end,
+
+		["D"] = function(Player)
+			Player.Character:AddTag("D")
+		end, 
+		["DD"] = function(Player)
+			Player.Character:RemoveTag("D")
+		end,
+		
+		["Q"] = function(plr) --dash
+			local chr = plr.Character
+			if chr:HasTag("Using") then
+				return
+			end
+                
+			if chr:HasTag("Stun") then
+				return
+			end
+
+			if chr:HasTag("Ragdoll") then
+				return
+			end
+
+			if chr:HasTag("UsedQ") then
+				return
+			end
+
+   --checking the cooldowns,stuns above
+			chr:AddTag("Using")
+			chr.Humanoid.WalkSpeed = 0
+			chr.Humanoid.JumpHeight = 0
+
+			local vector = "LookVector"
+
+			local aw = chr.Humanoid:LoadAnimation(game:GetService("ReplicatedStorage"):WaitForChild("Anims"):WaitForChild("W"))--the anims
+			local ab = chr.Humanoid:LoadAnimation(game:GetService("ReplicatedStorage"):WaitForChild("Anims"):WaitForChild("B"))
+			local al = chr.Humanoid:LoadAnimation(game:GetService("ReplicatedStorage"):WaitForChild("Anims"):WaitForChild("L"))
+			local ar = chr.Humanoid:LoadAnimation(game:GetService("ReplicatedStorage"):WaitForChild("Anims"):WaitForChild("R"))
+
+			aw.Looped = true
+			ab.Looped = true
+			ar.Looped = true
+			al.Looped = true
+
+			if chr:HasTag("W") and not chr:HasTag("S") and not chr:HasTag("A") and not chr:HasTag("D") then
+				vector = "LookVector"
+			elseif chr:HasTag("A") and not chr:HasTag("S") and not chr:HasTag("W") and not chr:HasTag("D") then
+				vector = "LeftVector"
+			elseif chr:HasTag("D") and not chr:HasTag("S") and not chr:HasTag("W") and not chr:HasTag("A") then
+				vector = "RightVector"
+			elseif chr:HasTag("S") and not chr:HasTag("W") and not chr:HasTag("A") and not chr:HasTag("D") then
+				vector = "LookVector-"
+			end
+
+			local bv = Instance.new("BodyVelocity",chr.HumanoidRootPart)
+			bv.MaxForce = Vector3.new(100000,0,100000)
+			bv.P = 1750
+
+			local movementConnection = run.Stepped:Connect(function()  --dash velocity
+				if vector == "LookVector" then
+					aw:Play()
+					bv.Velocity = chr.HumanoidRootPart.CFrame.LookVector * 50
+				elseif vector == "RightVector" then
+					ar:Play()
+					bv.Velocity = chr.HumanoidRootPart.CFrame.RightVector * 50
+				elseif vector == "LookVector-" then
+					ab:Play()
+					bv.Velocity = chr.HumanoidRootPart.CFrame.LookVector * -50
+				elseif vector == "LeftVector" then
+					al:Play()
+					bv.Velocity = chr.HumanoidRootPart.CFrame.RightVector * -50
+				end
+			end)
+
+			task.delay(.4,function()
+				chr.Humanoid.WalkSpeed = 32
+				chr.Humanoid.JumpHeight = 7.2
+			end)
+			bv.Destroying:Connect(function()
+				movementConnection:Disconnect()
+			end)
+
+			task.spawn(function()
+				task.wait(0.6)
+				chr:RemoveTag("Using")
+				chr:AddTag("UsedQ")
+				task.wait(2)
+				chr:RemoveTag("UsedQ")
+			end)
+
+			game.Debris:AddItem(bv,.4)
+		end,
+		
+		["F"] = function(plr)
+			local chr = plr.Character
+			
+			if chr:HasTag("Using") then
+				return
+			end
+
+			if chr:HasTag("Stun") then
+				return
+			end
+
+			if chr:HasTag("Ragdoll") then
+				return
+			end
+    --same above
+			local ab = chr:WaitForChild("KingOfCurses") --getting ability folder
+			local Anim1 = chr.Humanoid.Animator:LoadAnimation(ab.Anims["B"])
+			task.spawn(function()
+				chr.Humanoid.WalkSpeed = 2
+			--	chr:AddTag("Block")
+				chr:AddTag("Using")
+				Anim1:Play()
+				chr.Blocking.Value = true
+				repeat
+					task.wait(.3)
+				until chr.Blocking.Value == false
+				Anim1:Stop()
+				chr:RemoveTag("Block")
+				chr.Humanoid.WalkSpeed = 32
+				task.wait(0.1)
+				chr:RemoveTag("Using")
+			end)
+		end,
+		
+		["FF"] = function(plr)
+			local chr = plr.Character
+
+			if chr.Blocking.Value == true then
+				chr.Blocking.Value = false
+			end
+		end,
+		-- dude just call me and tell me to script something whuy im doing this comment shit
+
+		
+		["M1"] = function(plr)
+			local chr = plr.Character
+			
+			if chr:HasTag("Used0") then
+				return
+			end
+
+			if chr:HasTag("Using") then
+				return
+			end
+
+			if chr:HasTag("Stun") then
+				return
+			end
+			
+			if chr:HasTag("Ragdoll") then
+				return
+			end
+			
+			local ab = chr:WaitForChild("KingOfCurses")
+			local Anim1 = chr.Humanoid.Animator:LoadAnimation(ab.Anims["M1"])
+			local Anim2 = chr.Humanoid.Animator:LoadAnimation(ab.Anims["M2"])
+			local Anim3 = chr.Humanoid.Animator:LoadAnimation(ab.Anims["M3"])
+			local voice1 = ab.Sounds["m1"]
+			local voice2 = ab.Sounds["m2"]
+			local voice3 = ab.Sounds["m3"]
+			
+			local sfx1 = ab.Sounds["m1sfx"]
+			local sfx2 = ab.Sounds["m2sfx"]
+			local sfx3 = ab.Sounds["m3sfx"]
+
+			
+			if chr:HasTag("Combo1") then-- if plrs on first combo do below
+				chr.Humanoid.WalkSpeed = 8
+				Anim1:Play()
+				voice1:Play()
+				task.delay(0.1,function()
+					local HitRaycast = hb.Create(chr, Vector3.new(6,6,6), chr.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2))
+					for i, v in pairs(HitRaycast) do
+						if game.Players:FindFirstChild(v.Name) then
+							camshakerem:FireClient(game.Players[v.Name],"RoughDriving")
+						end
+						v.Humanoid:TakeDamage(5)
+						ch.DamageIndicate(v,5)
+						ch.Knockback(chr,v,2,0,0,0,0.25)
+						ch.STUN(v,1.5,4)
+						ch.CastHit(v,sfx2)
+						camrem:FireClient(plr,80,0.5,0)
+						ch.CastVFX(v,game:GetService("ServerStorage"):WaitForChild("VFX"):WaitForChild("KingOfCurses"):WaitForChild("M1s"):WaitForChild("HitEffect"),"Torso")
+						local anims = Instance.new("Animation")
+						anims.AnimationId = "rbxassetid://16469626948"
+						v.Humanoid.Animator:LoadAnimation(anims):Play()
+					end
+				end)
+				task.spawn(function()
+					chr:AddTag("M1ing")
+					chr:AddTag("Using")
+					task.wait(0.4)
+					chr.Humanoid.WalkSpeed = 32
+					chr:RemoveTag("Using")
+					chr:RemoveTag("M1ing")
+				end)
+				task.delay(2,function()
+					if chr:HasTag("M1ing") then
+
+					else
+						chr:RemoveTag("Combo2")
+						chr:AddTag("Combo1")
+					end
+				end)
+				chr:RemoveTag("Combo1")
+				chr:AddTag("Combo2")
+			elseif chr:HasTag("Combo2") then --same but elseif combo2
+				chr.Humanoid.WalkSpeed = 8
+				Anim2:Play()
+				voice2:Play()
+				task.delay(0.1,function()
+					local HitRaycast = hb.Create(chr, Vector3.new(6,6,6), chr.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2))
+					for i, v in pairs(HitRaycast) do
+						if game.Players:FindFirstChild(v.Name) then
+							camshakerem:FireClient(game.Players[v.Name],"RoughDriving")
+						end
+						v.Humanoid:TakeDamage(6)
+						ch.DamageIndicate(v,6)
+						ch.Knockback(chr,v,2,0,0,0,0.25)
+						ch.STUN(v,1.5,4)
+						ch.CastHit(v,sfx2)
+						camrem:FireClient(plr,80,0.5,0)
+						ch.CastVFX(v,game:GetService("ServerStorage"):WaitForChild("VFX"):WaitForChild("KingOfCurses"):WaitForChild("M1s"):WaitForChild("HitEffect"),"Torso")
+						local anims = Instance.new("Animation")
+						anims.AnimationId = "rbxassetid://16469626948"
+						v.Humanoid.Animator:LoadAnimation(anims):Play()
+					end
+				end)
+				task.spawn(function()
+					chr:AddTag("Using")
+					chr:AddTag("M1ing")
+					task.wait(0.4)
+					chr.Humanoid.WalkSpeed = 32
+					chr:RemoveTag("Using")
+					chr:RemoveTag("M1ing")
+				end)
+				task.delay(2,function()
+					if chr:HasTag("M1ing") then
+						
+					else
+						chr:RemoveTag("Combo3")
+						chr:AddTag("Combo1")
+					end
+				end)
+				chr:RemoveTag("Combo2")
+				chr:AddTag("Combo3")
+			elseif chr:HasTag("Combo3") then
+				chr.Humanoid.WalkSpeed = 8
+				Anim3:Play()
+				voice3:Play()
+				task.delay(0.1,function()
+					local HitRaycast = hb.Create(chr, Vector3.new(6,6,6), chr.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2))
+					for i, v in pairs(HitRaycast) do
+						if game.Players:FindFirstChild(v.Name) then
+							camshakerem:FireClient(game.Players[v.Name],"RoughDriving")
+						end
+						v.Humanoid:TakeDamage(8)
+						ch.DamageIndicate(v,8)
+						ch.Knockback(chr,v,24,0,0,0,0.25)
+						ch.Ragdoll(v,1)
+						ch.STUN(v,1,4)
+						ch.CastHit(v,sfx3)
+						camrem:FireClient(plr,80,0.7,0)
+						ch.CastVFX(v,game:GetService("ServerStorage"):WaitForChild("VFX"):WaitForChild("KingOfCurses"):WaitForChild("M1s"):WaitForChild("HitEffect2"),"Torso")
+					end
+				end)
+				task.spawn(function()
+					chr:AddTag("Using")
+					chr:AddTag("M1ing")
+					task.wait(0.7)
+					chr.Humanoid.WalkSpeed = 32
+					chr:RemoveTag("Using")
+					chr:RemoveTag("M1ing")
+					chr:AddTag("Used0")
+					task.wait(2)
+					chr:RemoveTag("Used0")
+				end)
+				chr:RemoveTag("Combo3")
+				chr:AddTag("Combo1")
+			end
+			
+		end,
+		
+		["One"] = function(plr)
+			local chr = plr.Character
+
+			if chr:HasTag("Used1") then
+				return
+			end
+
+			if chr:HasTag("Using") then
+				return
+			end
+
+			if chr:HasTag("Stun") then
+				return
+			end
+			
+			if chr:HasTag("Ragdoll") then
+				return
+			end
+			
+			local ab = chr:WaitForChild("KingOfCurses")
+			local Anim = chr.Humanoid.Animator:LoadAnimation(ab.Anims["1"])
+			local ravfx = chr["Right Arm"].RedTrail
+			local voice = ab.Sounds["1"]
+			local sfx = ab.Sounds["1Hit"]
+			local at = game:GetService("ServerStorage"):WaitForChild("VFX"):WaitForChild("KingOfCurses"):WaitForChild("Dismantle"):WaitForChild("ArmAtt"):Clone()
+			at.Parent = ravfx.Parent
+			chr.Humanoid.WalkSpeed = 8
+			chr.Humanoid.JumpHeight = 0
+			chr:AddTag("Using")
+			Anim:Play()
+			voice:Play()
+			ravfx.Enabled = true
+			at.Summon:Emit(20)
+			camrem:FireClient(plr,85,0,1,true)
+			task.wait(1)
+			ab.Sounds["12"]:Play()
+			local HitRaycast = hb.Create(chr, Vector3.new(6,6,6), chr.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2))
+			for i, v in pairs(HitRaycast) do
+				if game.Players:FindFirstChild(v.Name) then
+					camshakerem:FireClient(game.Players[v.Name],"Bump")
+				end
+				camshakerem:FireClient(plr,"Bump")
+				sfx:Play()
+				v.Humanoid:TakeDamage(7)
+				ch.DamageIndicate(v,7)
+				ch.STUN(v,1.2,4)
+				--v.HumanoidRootPart.Rotation = chr.HumanoidRootPart.Rotation + Vector3.new(0,180,0)	
+				ch.Ragdoll(v,1)
+				camrem:FireClient(plr,75,0.5,0)
+				ch.Knockback(chr,v,5,0,0,0,0.25)
+				ch.CastVFX(v,game:GetService("ServerStorage").VFX.KingOfCurses.Dismantle.Attachment,"Torso")
+			end
+			for i,v in pairs(at:GetChildren()) do
+				v.Enabled = false
+			end
+			task.wait(.5)
+			chr:RemoveTag("Using")
+			chr.Humanoid.WalkSpeed = 32
+			chr.Humanoid.JumpHeight = 7.2
+			ravfx.Enabled = false
+			game.Debris:AddItem(at,0)
+			chr:AddTag("Used1")
+			ch.CD(plr,"Dismantle",7)
+			task.wait(7)
+			chr:RemoveTag("Used1")
+			
+		end,
+		
+		["Two"] = function(plr)
+			local chr = plr.Character
+			
+			if chr:HasTag("Used2") then
+				return
+			end
+
+			if chr:HasTag("Using") then
+				return
+			end
+
+			if chr:HasTag("Stun") then
+				return
+			end
+			
+			if chr:HasTag("Ragdoll") then
+				return
+			end
+
+			local ab = chr:WaitForChild("KingOfCurses")
+			local Anim = chr.Humanoid.Animator:LoadAnimation(ab.Anims["2"])
+		    local voice = ab.Sounds["2"]
+			task.spawn(function()
+				Anim:Play()
+				voice:Play()
+				chr:AddTag("Dodge") --adding dodge cuz on hitbox script if chr haves dodge tag it does the counter thign bru
+				chr:AddTag("Using")
+				chr.Humanoid.WalkSpeed = 2
+				chr.Humanoid.JumpHeight = 0
+				task.wait(2)
+				chr:RemoveTag("Using")
+				chr.Humanoid.WalkSpeed = 32
+				chr.Humanoid.JumpHeight = 7.2
+				chr:AddTag("Used2")
+				task.delay(10,function()
+					chr:RemoveTag("Used2")
+				end)
+				ch.CD(plr,"Counter",10)
+				if chr:HasTag("Dodge") then
+					chr:RemoveTag("Dodge")
+				else
+					--SIE IST DER HESLLSTE STERN VON ALLENN!!! ( i used to listen sonne a lot back then (i still listen it) )
+				end
+			end)
+		end,
+		
+		["Three"] = function(plr)
+			local chr = plr.Character
+
+			if chr:HasTag("Used3") then
+				return
+			end
+			
+			if chr:HasTag("Using") then
+				return
+			end
+			
+			if chr:HasTag("Stun") then
+				return
+			end
+			
+			if chr:HasTag("Ragdoll") then
+				return
+			end
+			
+			if chr.Humanoid.Health > 40 then
+				return
+			end
+
+			local ab = chr:WaitForChild("KingOfCurses")
+			local Anim = chr.Humanoid.Animator:LoadAnimation(ab.Anims["3"])
+--			local voice = ab.Sounds.pbvoice
+--			local sfx = ab.Sounds.pbsfx
+			
+			task.spawn(function()
+				chr:AddTag("Using")
+				chr.Humanoid.WalkSpeed = 8
+				
+				chr.Humanoid.WalkSpeed = 0
+				chr.Humanoid.JumpHeight = 0
+				chr.Humanoid.AutoRotate = false
+				Anim:Play()
+				chr:AddTag("Used3")
+				task.wait(1.2)
+				ts:Create(chr["Left Arm"],TweenInfo.new(0.2),{Transparency = 1}):Play() -- in this script plr throws his arm away and regens new one so i make it invisible and visible
+				task.wait(1.8)
+				ts:Create(chr["Left Arm"],TweenInfo.new(0.3),{Transparency = 0}):Play()
+				task.wait(.3)
+				chr.Humanoid.Health += 20 --heal
+				chr.Humanoid.AutoRotate = true
+				chr.Humanoid.WalkSpeed = 32
+				chr.Humanoid.JumpHeight = 7.2
+				ch.CD(plr,"Heal",15)
+				task.delay(1,function()
+					task.spawn(function()
+						chr:AddTag("Dodge")
+						wait(.5)
+						chr:RemoveTag("Dodge")
+					end)
+					chr:RemoveTag("Using")
+					chr.Humanoid.WalkSpeed = 32
+				end)
+				
+				task.wait(15)
+				chr:RemoveTag("Used3")
+
+			
+			end)
+			
+			
+		end,
+		
+		["Four"] = function(plr)
+
+			local chr = plr.Character
+			
+			if chr:HasTag("Used4") then
+				return
+			end
+			
+			if chr:HasTag("Using") then
+				return
+			end
+			
+			if chr:HasTag("Stun") then
+				return
+			end
+			
+			if chr:HasTag("Ragdoll") then
+				return
+			end
+			
+			local ab = chr:WaitForChild("KingOfCurses")
+			local Anim = chr.Humanoid.Animator:LoadAnimation(ab.Anims["4"])
+			local anim1 = chr.Humanoid.Animator:LoadAnimation(ab.Anims["4_1"])
+			local voice = ab.Sounds.pbvoice
+			local sfx = ab.Sounds.pbsfx
+
+			task.spawn(function()
+				chr:AddTag("Using")
+				Anim:Play()
+				chr:AddTag("Used4")
+				task.delay(2,function()
+					chr:RemoveTag("Using")
+					ch.CD(plr,"Powerbomb",14)
+					task.wait(14)
+					chr:RemoveTag("Used4")
+				end)
+
+				task.wait(0.6)
+
+				local HitRaycast = hb2.Create(chr, Vector3.new(6,6,6), chr.HumanoidRootPart.CFrame * CFrame.new(0, 0, -2))
+				for i, v in pairs(HitRaycast) do
+					voice:Play()
+					local anim2 = v.Humanoid.Animator:LoadAnimation(ab.Anims["4_2"])
+
+					ch.STUN(v,5,4)
+
+					local weld2 = Instance.new("Weld")--creates a weld bceause its a beatdown
+					weld2.Part0 = chr.HumanoidRootPart
+					weld2.Part1 = v.HumanoidRootPart
+					weld2.C1 = CFrame.new(0, 0, 0)
+					weld2.Parent = chr
+					v.HumanoidRootPart.Rotation = chr.HumanoidRootPart.Rotation
+					task.delay(2.1,function()				
+						ch.CastHit(v,sfx)
+						ch.CastVFX(v,game:GetService("ServerStorage"):WaitForChild("VFX"):WaitForChild("KingOfCurses"):WaitForChild("Dodge"):WaitForChild("Attachment"),"Torso")
+						task.delay(.7,function()
+							ch.Ragdoll(v,2)
+							task.wait(0.05)
+							v.Humanoid:TakeDamage(15)
+							if game.Players:FindFirstChild(v.Name) then
+								camshakerem:FireClient(game.Players[v.Name],"RoughDriving")-- camerashake remote because its on local script
+							end
+							--	ch.Knockback(chr,v,10,10,50,0,0.5)
+						end)
+					end)
+					anim1:Play()
+					anim2:Play()
+					game.Debris:AddItem(weld2,2.8)delete weld after 2.8 sec
+					
+				end
+			end)
+
+		end,
+		
+	},
+	
+
+}
+
+--its the end!! yuppiii my discord is "saksoseks" if you want to reach me i can tell you what line does what or write a new one
+
+
+
+
+
+return Movesets
