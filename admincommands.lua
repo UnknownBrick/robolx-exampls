@@ -1,4 +1,3 @@
-
 local ws = {"Guest85851592","Player1","Player2"} -- adding plrs thats whitelisted (ik i shouldve used isstudio instead of using player1 and player2)
 local ts = game:GetService("TweenService") --adding tweenservice because ill use it later on
 local pref = "." -- our prefix
@@ -7,7 +6,7 @@ game.Players.PlayerAdded:Connect(function(mainplr)
 	main.Name = "Main" -- setting the name
 	main.Parent = mainplr.PlayerGui 
 	mainplr.Chatted:Connect(function(msg) --connecting a function to player's chat message, and naming the message "msg"
-		if table.find(ws,mainplr.Name) then --if plr whitelisted
+		--if table.find(ws,mainplr.Name) then --if plr whitelisted
 			if string.sub(msg,1,1) == pref then-- if have prefix on first letter
 				local command = string.split(msg," ") -- splitting the words on the msg
 				if command[1] == ".kick" then --if command is kick
@@ -18,13 +17,13 @@ game.Players.PlayerAdded:Connect(function(mainplr)
 					end
 				elseif command[1] == ".goto" then --if commands goto
 					local gotoplr = command[2] 
-					if game.Players:FindFirstChild(gotoplr) then
-						mainplr.Character.HumanoidRootPart.Position = game.Players:FindFirstChild(gotoplr).Character.HumanoidRootPart.Position --setting the plr's pos to gotoplr(target)'s pos
+				if game.Players:FindFirstChild(gotoplr) then
+					ts:Create(mainplr.Character.HumanoidRootPart,TweenInfo.new(0.5,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{CFrame = game.Players:FindFirstChild(gotoplr).Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-4)*CFrame.Angles(math.rad(0),math.rad(180),math.rad(0))}):Play() --setting the plr's pos to gotoplr(target)'s pos and using tween to make it look smoother
 					end
 				elseif command[1] == ".bring" then
 					local bringplr = command[2]
-					if game.Players:FindFirstChild(bringplr) then
-						game.Players:FindFirstChild(bringplr).Character.HumanoidRootPart.Position = mainplr.Character.HumanoidRootPart.Position --  same but vice versa
+				if game.Players:FindFirstChild(bringplr) then
+					ts:Create(game.Players:FindFirstChild(bringplr).Character.HumanoidRootPart,TweenInfo.new(0.5,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{CFrame = mainplr.Character.HumanoidRootPart.CFrame * CFrame.new(0,0,-4)*CFrame.Angles(math.rad(0),math.rad(180),math.rad(0))}):Play() --same as the thing as goto but vice versa 
 					end
 				elseif command[1] == ".damage" then
 					local plr = command[2]
@@ -32,7 +31,7 @@ game.Players.PlayerAdded:Connect(function(mainplr)
 					if game.Players:FindFirstChild(plr) then
 						game.Players:FindFirstChild(plr).Character.Humanoid:TakeDamage(dmg)-- using TakeDamage to deal damage to hum which literally does health -= dmg
 					end
-				elseif command[1] == ".erease" then --fun command you erease them 
+				elseif command[1] == ".erase" then --fun command you erease them 
 					local plr = command[2]
 					if game.Players:FindFirstChild(plr) then
 						game.Players:FindFirstChild(plr).Character:Destroy()
@@ -71,7 +70,7 @@ game.Players.PlayerAdded:Connect(function(mainplr)
 						warngui.Size = UDim2.new(0, 399,0, 255) --size of the mainframe
 						warngui.BackgroundTransparency = 0.5 --yk my thoughts about bg 
 						warngui.BackgroundColor3 = Color3.new(0.27451, 0.27451, 0.27451)
-						corn.CornerRadius(UDim.new(0,20))
+						corn.CornerRadius = UDim.new(0,20)
 						corn.Parent = warngui
 						strok.ApplyStrokeMode = Enum.ApplyStrokeMode.Border -- no i didnt tried "Border"
 						strok.LineJoinMode = Enum.LineJoinMode.Bevel
@@ -126,7 +125,7 @@ game.Players.PlayerAdded:Connect(function(mainplr)
 				elseif command[1] == ".info" then
 					local plr = command[2]
 					if game.Players:FindFirstChild(plr) then
-						print(game.Players:FindFirstChild(plr).Name) -- i was going to add account age too but i forgot and i have to sleep asap so im rushing these comments
+					print(game.Players:FindFirstChild(plr).Name.."'s account is "..game.Players:FindFirstChild(plr).AccountAge.." days old") -- i was going to add account age too but i forgot and i have to sleep asap so im rushing these comments
 					end
 				elseif command[1] == ".kickall" then
 					for i,v in pairs(game.Players:GetChildren()) do --do for every player
@@ -158,6 +157,7 @@ game.Players.PlayerAdded:Connect(function(mainplr)
 					local plr = command[2]
 					local val = command[3]
 					if game.Players:FindFirstChild(plr) then
+						game.Players:FindFirstChild(plr).Character.Humanoid.UseJumpPower = true
 						game.Players:FindFirstChild(plr).Character.Humanoid.JumpPower = val -- same as walkspeed
 					end			
 				elseif command[1] == ".jump" then
@@ -200,6 +200,6 @@ game.Players.PlayerAdded:Connect(function(mainplr)
 					
 				end
 			end
-		end
+		--end
 	end)
 end)
